@@ -10,6 +10,10 @@ S3_PATH = 'data'
 
 
 def execute_bash_command(bash_command):
+    """
+    Executes a bash commandfrom Python (requires Linux based terminal)
+    """
+
     try:
         subprocess.run(bash_command, shell=True, check=True)
     except subprocess.CalledProcessError as e:
@@ -17,12 +21,24 @@ def execute_bash_command(bash_command):
         
 
 def remove_directory(dir):
+    """
+    Removes a directory
+    """
+
     execute_bash_command(f'rm -rf {dir}')
 
 
 def get_pe_and_normal_dataset(df):
+    """
+    Subsets a dataframe of labels on Pleural Effusion (PE) and "Normal" (No
+    Findings)
+    """
 
     def label_data(row):
+        """
+        Nested function to label PE and No Findings
+        """
+
         if row['Pleural Effusion'] == 1:
             if row['N_Findings'] == 1:
                 return 'PE Only'
@@ -147,7 +163,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-
-
-
-
