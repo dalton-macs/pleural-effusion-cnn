@@ -18,6 +18,7 @@ load_dotenv()
 MODEL_NAME = 'simple-cnn-poc'
 HF_DATASET = os.getenv('HF_DATASET')
 HF_DATASET_TRAIN_SIZE = int(os.getenv('HF_DATASET_TRAIN_SIZE'))
+HF_DATASET_VALID_SIZE = int(os.getenv('HF_DATASET_VALID_SIZE'))
 
 s3 = boto3.client('s3')
  
@@ -123,7 +124,7 @@ for epoch in range(1, num_epochs+1):
 
     print(f'Epoch [{epoch}/{num_epochs}], '
           f'Train Loss: {loss.item():.4f}, '
-          f'Val Loss: {val_loss/len(val_loader):.4f}, '
+          f'Val Loss: {val_loss/HF_DATASET_VALID_SIZE:.4f}, '
           f'Val Accuracy: {(100 * correct / total):.2f}%')
 
 # Save resulting model
