@@ -141,7 +141,7 @@ class BaseCNNPE:
                         'loss': loss,
                     }
 
-                    self._save_model(data, path)
+                    _ = self._save_model(data, path)
 
 
             if not train_w_valid:
@@ -168,7 +168,7 @@ class BaseCNNPE:
 
         # Save resulting model
         path = f"{self.model_name}-fully-trained.pth"
-        self._save_model(self.model, path)
+        model_path = self._save_model(self.model, path)
         
         data = {
             'n_epochs': n_epochs,
@@ -179,14 +179,20 @@ class BaseCNNPE:
         
         self._save_model(data, f"{self.model_name}-fully-trained_metadata.pth")
 
+        return model_path
+
     @classmethod
     def predict(cls, model: nn.Module, dataset: Dataset, batch_size: int):
         raise NotImplementedError
 
     def _save_model(self, data, s3_path):
+
+        full_path = f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}"
         with BytesIO() as bytes:
             torch.save(data, bytes)
             bytes.seek(0)
             self.s3.put_object(Body=bytes,
                         Bucket=AWS_BUCKET,
-                        Key=f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}")
+                        Key=full_path)
+            
+        return f"s3://{AWS_BUCKET/full_path}"
