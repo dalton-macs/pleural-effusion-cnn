@@ -39,11 +39,13 @@ def ResNet18CustomShowkatWrapper(model_name: str = 'ResNet18ShowkatCustom',
     
     PAPER INFO:
     ----------
-    "The customized ResNet model was trained with BCE as the loss function,
+    "All images were rescaled to a size of 224 ​× ​224...
+    The customized ResNet model was trained with BCE as the loss function,
     a learning rate of 0.0001, Adam optimizer, and batch size of 64...
     The model was trained with a holdout factor of 35 and trained for 77
     epochs..."
     """
+
     model_name = model_name
     model = ResNet18Custom(num_classes = num_classes)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
