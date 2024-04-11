@@ -203,6 +203,7 @@ class BaseCNNPE:
         raise NotImplementedError
 
     def _save_model(self, data, s3_path):
+        logger.info('Putting data in S3')
 
         full_path = f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}"
         with BytesIO() as bytes:
@@ -212,4 +213,7 @@ class BaseCNNPE:
                         Bucket=AWS_BUCKET,
                         Key=full_path)
             
-        return f"s3://{AWS_BUCKET/full_path}"
+        full_bucket_path = f"s3://{AWS_BUCKET}/{full_path}"
+        logger.info(f'Succesfully put data in {full_bucket_path}')
+            
+        return full_bucket_path

@@ -46,7 +46,7 @@ def ResNet18CustomShowkatWrapper(model_name: str = 'ResNet18ShowkatCustom',
     """
     model_name = model_name
     model = ResNet18Custom(num_classes = num_classes)
-    optimizer = optim.SGD(model.parameters(), lr=0.0001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
     criterion = nn.BCELoss()
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
