@@ -169,13 +169,14 @@ class BaseCNNPE:
                 total = 0
                 with torch.no_grad():
                     for i, batch in tqdm(enumerate(valid_loader)):
-                        images, labels, _ = batch['images'], batch['labels']
+                        images, labels = batch['images'], batch['labels']
                         images, labels = images.to(self.device),\
                             labels.to(self.device)
+                        labels_single = torch.argmax(labels, 1)
                         outputs = self.model(images)
-                        _, predicted = torch.max(outputs, 1)
+                        predicted = torch.argmax(outputs, 1)
                         total += labels.size(0)
-                        correct += (predicted == labels).sum().item()
+                        correct += (predicted == labels_single).sum().item()
                         val_loss += self.criterion(outputs, labels).item()
 
                 logger.info(f'Epoch [{epoch}/{n_epochs}], '
