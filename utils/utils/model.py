@@ -1,14 +1,59 @@
 from io import BytesIO
 import os
+import logging
 import boto3
 from torchvision import transforms
 import torch
 from PIL import Image
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
 s3 = boto3.client('s3')
+
+
+class EarlyStopping:
+    """
+    A class to implement erly stopping of training if loss plateaus after
+    <patience> epochs.
+    """
+
+    def __init__(self,
+                 patience: int =5,
+                 verbose: bool =False,
+                 delta: float =0) -> None:
+        
+        self.patience = patience
+        self.verbose = verbose
+        self.delta = delta
+        self.best_score = None
+        self.early_stop = False
+        self.counter = 0
+
+    def __call__(self, val_loss: float, model: torch.nn.Module):
+        score = -val_loss
+
+        if self.best_score is None:
+            self.best_score = score
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                logger.info(f'EarlyStopping counter: {self.counter} out of 
+                      {self.patience}')
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.counter = 0
+
+
 
 def load_model_from_s3_checkpoint(key: str) -> torch.nn.Module:
     """
