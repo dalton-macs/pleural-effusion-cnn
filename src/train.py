@@ -2,7 +2,11 @@
 The main training file
 """
 import click
-from train_wrappers import ResNet18CustomShowkatWrapper
+from train_wrappers import (
+    ResNet18CustomShowkatWrapper,
+    GoogLeNetTangWrapper,
+)
+
 
 # TODO: Make CLI more customizable while preserving defaults
 
@@ -18,12 +22,13 @@ def train_resnet():
     model.fit(n_epochs=n_epochs, batch_size=batch_size)
 
 
-# TODO: Dalton
 @cli.command(name='googlenet')
 # @click.option('--model-name', default=None, help='model_name')
 def train_googlenet():
     click.echo(f'Training the Custom GoogLeNet Model')
-    raise NotImplementedError
+    model, batch_size, n_epochs = GoogLeNetTangWrapper()
+    model.fit(n_epochs=n_epochs, batch_size=batch_size)
+
 
 # TODO: Jeffrey or Jingni
 @cli.command(name='unet')
@@ -31,6 +36,7 @@ def train_googlenet():
 def train_unet():
     click.echo(f'Training the Custom UNet Model')
     raise NotImplementedError
+
 
 # TODO: Jeffrey or Jingni
 @cli.command(name='densenet')

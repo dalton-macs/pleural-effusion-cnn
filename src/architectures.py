@@ -31,10 +31,13 @@ class ResNet18Custom(nn.Module):
         self.resnet18 = models.resnet18(pretrained=True)
         
         # Freeze all parameters in frozen layers
-        for param in self.resnet18.parameters():
-            param.requires_grad = False
+        for name, param in self.resnet18.named_parameters():
+            if any(name.startswith(layer) for layer in frozen_layers):
+                param.requires_grad = False
+            else:
+                param.requires_grad = True
 
-        # Modify the convolution layer to take in greyscale image (1 channel)
+        # Modify the convolution layer to take in grayscale image (1 channel)
         self.resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=7,
                                         stride=2, padding=3, bias=False)
         
@@ -56,7 +59,45 @@ class ResNet18Custom(nn.Module):
 
 # TODO: Dalton
 class GoogLeNetCustom(nn.Module):
-    pass
+    """
+    A Semi-custom Inception-V3 (GoogLeNet) implementation of this paper:
+    https://doi.org/10.1038/s41746-020-0273-z
+    """
+    def __init__(self,
+                 num_classes: int,
+                 train_layers: List[str] = [
+                     'Conv2d_1a_3x3',
+                     'fc'
+                 ]) -> None:
+        
+        super(GoogLeNetCustom, self).__init__()
+        self.inception_v3 = models.inception_v3(pretrained=True)
+        
+        # Freeze all parameters in frozen layers
+        for name, param in self.inception_v3.named_parameters():
+            if any(name.startswith(layer) for layer in train_layers):
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+
+        # Modify the convolution layer to take in grayscale image (1 channel)
+        self.inception_v3.Conv2d_1a_3x3.conv = nn.Conv2d(1,
+                                                         32,
+                                                         kernel_size=(3, 3),
+                                                         stride=(2, 2),
+                                                         bias=False)
+        
+        # Modify the FC layer to be dynamic to number of classes
+        num_features = self.inception_v3.fc.in_features
+        self.inception_v3.fc = nn.Sequential(
+            nn.Linear(in_features=num_features,
+                      out_features=num_classes, bias=True),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.inception_v3(x)
+    
 
 # TODO: Jeffrey or Jingni
 class UNetCustom(nn.Module):
