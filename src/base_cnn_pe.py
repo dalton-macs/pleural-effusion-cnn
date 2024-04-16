@@ -3,6 +3,7 @@ import os
 from io import BytesIO
 import boto3
 import math
+import logging
 from tqdm import tqdm
 
 import torch
@@ -19,6 +20,14 @@ from dotenv import load_dotenv
 
 from utils import label2numeric
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
 AWS_MODEL_PREFIX = os.getenv('AWS_MODEL_PREFIX')
@@ -31,6 +40,7 @@ HF_DATASET_TEST_SIZE = int(os.getenv('HF_DATASET_TEST_SIZE'))
 class BaseCNNPE:
 
     s3 = boto3.client('s3')
+    # device = torch.device("cpu")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def __init__(self,
@@ -46,14 +56,16 @@ class BaseCNNPE:
                  ):
         
         self.model_name = model_name
-        self.model = model
+        self.model = model.to(self.device)
         self.optimizer = optimizer
         self.criterion = criterion
         self.transform = transform
         self.dataset = load_dataset(HF_DATASET, **dataset_kwargs)
         self.label_map = label_map
+        self.num_classes = len(set(self.label_map.values()))
 
     def prepare_data(self, dataset: Dataset, batch_size: int) -> DataLoader:
+        logger.info("Preparing the dataset")
 
         def map_labels(example):
             example['label'] = label2numeric(example['label'], self.label_map)
@@ -67,13 +79,16 @@ class BaseCNNPE:
                 image = Image.open(image_data_io)
                 image = self.transform(image)
 
-            return image, example['label'], example['dicom_id']
+            label = label2numeric(example['label'], self.label_map)
+
+            return image, label, example['dicom_id']
 
 
         def collate_get_image(batch):
             images = []
             labels = []
             dicom_ids = []
+
             for example in batch:
 
                 image, label, dicom_id = get_image(example)
@@ -82,15 +97,15 @@ class BaseCNNPE:
                 dicom_ids.append(dicom_id)
             # Stack the preprocessed images into a batch tensor
             images = torch.stack(images, dim=0)
-            labels = torch.tensor(labels)
+            # labels = torch.tensor(labels).float()
+            labels = nn.functional.one_hot(torch.tensor(labels),
+                                           self.num_classes).float()
             # dicom_ids = torch.tensor(dicom_ids)
             return {
                 'images': images,
                 'labels': labels,
                 'dicom_ids': dicom_ids
             }
-        
-        self.dataset = self.dataset.map(map_labels)
 
         data_loader = DataLoader(dataset = dataset,
                                  batch_size = batch_size,
@@ -99,6 +114,7 @@ class BaseCNNPE:
         return data_loader
     
     def fit(self, n_epochs: int, batch_size: int, train_w_valid: bool = False):
+        logger.info("Starting the training process")
 
         if train_w_valid:
             dataset = self.dataset['train'].concatenate(
@@ -115,10 +131,11 @@ class BaseCNNPE:
             
         # Training Loop
         for epoch in range(1, n_epochs+1):
+            logger.info(f"EPOCH [{epoch}/{n_epochs}]")
             self.model.train()
             for i, batch in tqdm(enumerate(train_loader, 1)):
-                images, labels, _ = batch['images'], batch['labels']
-                images, labels, _ = images.to(self.device),\
+                images, labels = batch['images'], batch['labels']
+                images, labels = images.to(self.device),\
                     labels.to(self.device)
                 self.optimizer.zero_grad()
                 outputs = self.model(images)
@@ -129,7 +146,7 @@ class BaseCNNPE:
                 # Save a checkpoint
                 if i%100 == 0 or i == n_batches:
 
-                    print(f'Epoch [{epoch}/{n_epochs}], '
+                    logger.info(f'Epoch [{epoch}/{n_epochs}], '
                         f'Batch [{i}/{n_batches}], '
                         f'Train Loss: {loss.item():.4f}')
 
@@ -152,16 +169,17 @@ class BaseCNNPE:
                 total = 0
                 with torch.no_grad():
                     for i, batch in tqdm(enumerate(valid_loader)):
-                        images, labels, _ = batch['images'], batch['labels']
+                        images, labels = batch['images'], batch['labels']
                         images, labels = images.to(self.device),\
                             labels.to(self.device)
+                        labels_single = torch.argmax(labels, 1)
                         outputs = self.model(images)
-                        _, predicted = torch.max(outputs, 1)
+                        predicted = torch.argmax(outputs, 1)
                         total += labels.size(0)
-                        correct += (predicted == labels).sum().item()
+                        correct += (predicted == labels_single).sum().item()
                         val_loss += self.criterion(outputs, labels).item()
 
-                print(f'Epoch [{epoch}/{n_epochs}], '
+                logger.info(f'Epoch [{epoch}/{n_epochs}], '
                     f'Train Loss: {loss.item():.4f}, '
                     f'Val Loss: {val_loss/HF_DATASET_VALID_SIZE:.4f}, '
                     f'Val Accuracy: {(100 * correct / total):.2f}%')
@@ -186,6 +204,7 @@ class BaseCNNPE:
         raise NotImplementedError
 
     def _save_model(self, data, s3_path):
+        logger.info('Putting data in S3')
 
         full_path = f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}"
         with BytesIO() as bytes:
@@ -195,4 +214,7 @@ class BaseCNNPE:
                         Bucket=AWS_BUCKET,
                         Key=full_path)
             
-        return f"s3://{AWS_BUCKET/full_path}"
+        full_bucket_path = f"s3://{AWS_BUCKET}/{full_path}"
+        logger.info(f'Succesfully put data in {full_bucket_path}')
+            
+        return full_bucket_path

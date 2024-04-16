@@ -10,14 +10,23 @@ Predict plueral effusion in chest x-rays using the MIMIC-CXR-JPG dataset. This p
 - **src**/
     - **architectures.py** - SOTA CNN architecture implementations
     - **base_cnn_pe.py** - a base class for fitting and predicting with any model architecture
-    - **main.py** - main code that trains a CNN and also can predict
-        - *probably will use [python's click](https://click.palletsprojects.com/en/8.1.x/) implementation*
+    - **train.py** - main code that trains a CNN
 - **test**/ - various testing code
 - **utils**/
     - **prep_data**/ - python files that prepare data and do a train-valid-test split
     - **utils**/ - various utility methods used in the modeling efforts
 
-## How to Implement the BaseCNNPE Class
+## Instructions
+### Training your model
+[Python's click](https://click.palletsprojects.com/en/8.1.x/) module was used for easy CLI interaction.
+For instance, if you would like to train the customized resnet model, you would run the following from the root directory:
+
+```python
+python src/train.py resnet
+```
+
+
+### How to Implement the BaseCNNPE Class
 This is a framework class that can be used to train a CNN of any architecture as well as make predictions on data using a trained model. There are two options to use this class:
 
 1. Create a **BaseCNNPE** class object for a model architecture
@@ -41,8 +50,8 @@ This is a framework class that can be used to train a CNN of any architecture as
 2. Create a sub-class of **BaseCNNPE**
     - This method should be used when a specific model architecture requires a different preprocessing or fit method
 
-## Environment Setup Instructions
-### Conda Environment Setup
+### Environment Setup Instructions
+#### Conda Environment Setup
 1. Install [anaconda](https://www.anaconda.com/download)
 2. Change directory to the root of this repository
     ```bash
@@ -65,7 +74,7 @@ This is a framework class that can be used to train a CNN of any architecture as
     conda develop .
     ```
 
-### AWS Key Setup
+#### AWS Key Setup
 1. The AWS CLI should have been installed with the requirements above. Configure your keys by running:
     ```bash
     aws configure
@@ -75,7 +84,7 @@ This is a framework class that can be used to train a CNN of any architecture as
 4. Enter us-east-1 for the default region name
 5. Enter json for the default output format
 
-### HuggingFace Setup
+#### HuggingFace Setup
 This is only needed if using private datasets/models. As of now (03/30/2024), the dataset is public, so this setup can be skipped. Instructions are provided here for future reference.
 
 1. Create or log in to your [HuggingFace](https://huggingface.co/) account
