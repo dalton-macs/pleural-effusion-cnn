@@ -56,6 +56,11 @@ class BaseCNNPE:
                  ):
         
         self.model_name = model_name
+
+        # Take advantage of multiple GPUs
+        if torch.cuda.device_count() > 1:
+            model = nn.DataParallel(model)
+
         self.model = model.to(self.device)
         self.optimizer = optimizer
         self.criterion = criterion
