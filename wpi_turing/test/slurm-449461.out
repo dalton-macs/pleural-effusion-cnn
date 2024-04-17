@@ -1,0 +1,7 @@
+running source activate
+starting script now
+2024-04-17 08:31:31,405 - __main__ - INFO - AWS Bucket: mimic-cxr-jpg-cs534-team11
+2024-04-17 08:31:31,405 - __main__ - INFO - AWS Model Prefix: model
+2024-04-17 08:31:31,469 - __main__ - INFO - Is CUDA available: True
+2024-04-17 08:31:33,744 - __main__ - INFO - Buckets: dm-mimic-iii, elasticbeanstalk-us-east-1-211826173771, mimic-cxr-jpg-cs534-team11, sagemaker-studio-a3xv5lojzyh, sagemaker-us-east-1-211826173771
+I am done
