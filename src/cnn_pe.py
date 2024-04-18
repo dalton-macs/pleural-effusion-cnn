@@ -62,7 +62,7 @@ class BaseCNNPE:
         if torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
 
-        self.model = model.to(self.device)
+        self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
         self.transform = transform
@@ -119,7 +119,8 @@ class BaseCNNPE:
         
         return data_loader
     
-    def fit(self, n_epochs: int, batch_size: int, train_w_valid: bool = False):
+    def fit(self, n_epochs: int, start_epoch: int,
+            batch_size: int, train_w_valid: bool = False):
         logger.info("Starting the training process")
 
         if train_w_valid:
@@ -136,7 +137,7 @@ class BaseCNNPE:
             n_batches = math.ceil(HF_DATASET_TRAIN_SIZE/batch_size)
             
         # Training Loop
-        for epoch in range(1, n_epochs+1):
+        for epoch in range(start_epoch, n_epochs+1):
             logger.info(f"EPOCH [{epoch}/{n_epochs}]")
             self.model.train()
             for i, batch in tqdm(enumerate(train_loader, 1)):
@@ -156,7 +157,8 @@ class BaseCNNPE:
                         f'Batch [{i}/{n_batches}], '
                         f'Train Loss: {loss.item():.4f}')
 
-                    path = f"checkpoints/epoch_{epoch}_batch_{i}.pth"
+                    path = f"checkpoints/epoch_{str(epoch).zfill(2)}_batch_"\
+                        f"{str(i).zfill(2)}.pth"
                     data = {
                         'epoch': epoch,
                         'model_state_dict': self.model.state_dict(),
@@ -258,7 +260,8 @@ class GoogLeNetCNNPE(BaseCNNPE):
             self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
                                                   **lr_scheduler_kwargs)
 
-    def fit(self, n_epochs: int, batch_size: int, train_w_valid: bool = False):
+    def fit(self, n_epochs: int, start_epoch: int,
+            batch_size: int, train_w_valid: bool = False):
         logger.info("Starting the training process")
 
         if train_w_valid:
@@ -275,7 +278,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
             n_batches = math.ceil(HF_DATASET_TRAIN_SIZE/batch_size)
             
         # Training Loop
-        for epoch in range(1, n_epochs+1):
+        for epoch in range(start_epoch, n_epochs+1):
             logger.info(f"EPOCH [{epoch}/{n_epochs}]")
             self.model.train()
             for i, batch in tqdm(enumerate(train_loader, 1)):

@@ -55,7 +55,7 @@ class EarlyStopping:
 
 
 
-def load_model_from_s3_checkpoint(key: str) -> torch.nn.Module:
+def load_model_from_s3_checkpoint(key: str, device: str) -> torch.nn.Module:
     """
     Load a PyTorch model from a checkpoint file stored in an Amazon S3 bucket.
 
@@ -65,8 +65,7 @@ def load_model_from_s3_checkpoint(key: str) -> torch.nn.Module:
 
     RETURNS:
     -------
-        model: PyTorch model loaded from the checkpoint.
-        checkpoint_info (dict): Information stored in the checkpoint
+        checkpoint (dict): Information stored in the checkpoint
         (e.g., model state dict, optimizer state dict).
     """
 
@@ -76,7 +75,8 @@ def load_model_from_s3_checkpoint(key: str) -> torch.nn.Module:
     # Load model from checkpoint bytes using BytesIO
     checkpoint_buffer = BytesIO(checkpoint_bytes)
 
-    # Load model from checkpoint buffer
-    model = torch.load(checkpoint_buffer)
+    # Load checkpoint from checkpoint buffer
+    checkpoint = torch.load(checkpoint_buffer,
+                            map_location=torch.device(device))
 
-    return model
+    return checkpoint
