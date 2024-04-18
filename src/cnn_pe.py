@@ -310,7 +310,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
                     _ = self._save_model(data, path)
 
 
-            self.lr_scheduler.step()
+            self.lr_scheduler.step(loss)
 
             if not train_w_valid:
 
