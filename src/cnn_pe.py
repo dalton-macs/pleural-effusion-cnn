@@ -115,6 +115,7 @@ class BaseCNNPE:
 
         data_loader = DataLoader(dataset = dataset,
                                  batch_size = batch_size,
+                                 num_workers=2,
                                  collate_fn = collate_get_image)
         
         return data_loader
