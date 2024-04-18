@@ -66,7 +66,6 @@ class GoogLeNetCustom(nn.Module):
     def __init__(self,
                  num_classes: int,
                  train_layers: List[str] = [
-                     'Conv2d_1a_3x3',
                      'fc'
                  ]) -> None:
         
@@ -80,13 +79,6 @@ class GoogLeNetCustom(nn.Module):
             else:
                 param.requires_grad = False
 
-        # Modify the convolution layer to take in grayscale image (1 channel)
-        self.inception_v3.Conv2d_1a_3x3.conv = nn.Conv2d(1,
-                                                         32,
-                                                         kernel_size=(3, 3),
-                                                         stride=(2, 2),
-                                                         bias=False)
-        
         # Modify the FC layer to be dynamic to number of classes
         num_features = self.inception_v3.fc.in_features
         self.inception_v3.fc = nn.Sequential(

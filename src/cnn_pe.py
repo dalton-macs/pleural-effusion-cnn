@@ -283,7 +283,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
                 images, labels = images.to(self.device),\
                     labels.to(self.device)
                 self.optimizer.zero_grad()
-                outputs = self.model(images)
+                outputs = self.model(images).logits
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()

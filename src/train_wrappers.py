@@ -119,10 +119,12 @@ def GoogLeNetTangWrapper(model_name: str = 'GoogLeNetTangCustom',
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     criterion = nn.BCELoss()
     transform = transforms.Compose([
+        transforms.ToTensor(),
+        # Convert to three channels or GoogLeNet breaks
+        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
         transforms.Resize((342, 342)),
         transforms.CenterCrop((299, 299)),
         transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
     ])
     early_stopper = EarlyStopping
     lr_scheduler_kwargs = {'mode': 'min', 'factor': 0.1, 'patience': 5}
