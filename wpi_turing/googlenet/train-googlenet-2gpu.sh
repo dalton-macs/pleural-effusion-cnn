@@ -23,7 +23,7 @@ echo "starting script now"
 cd ../..
 pwd
 
-python src/train.py googlenet
+python src/train.py googlenet --model-name "GoogLeNetTangCustom-1GPU-Turing"
 
 echo "I am done"
 

@@ -2,7 +2,7 @@
 #SBATCH -N 1
 #SBATCH -n 24
 #SBATCH --mem=12g
-#SBATCH -J "resnet checkpoint"
+#SBATCH -J "resnet checkpoint 2gpu"
 #SBATCH -p academic
 #SBATCH -t 48:00:00
 #SBATCH --gres=gpu:2
@@ -24,7 +24,7 @@ cd ../..
 pwd
 
 # python src/train.py resnet
-python src/train.py resnet --checkpoint-path "model/ResNet18ShowkatCustom/checkpoints/epoch_27_batch_233.pth"
+python src/train.py resnet --model-name "ResNet18ShowkatCustom-2GPU-Turing" --checkpoint-path "model/ResNet18ShowkatCustom/checkpoints/epoch_27_batch_233.pth"
 
 echo "I am done"
 
