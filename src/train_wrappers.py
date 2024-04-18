@@ -3,7 +3,6 @@ Wrap architectures in the BaseCNNPE class.
 """
 from abc import ABC, abstractmethod
 from typing import Tuple
-from pydantic import BaseModel
 import re
 
 import torch
@@ -19,7 +18,7 @@ from architectures import (
 )
 from utils import EarlyStopping, load_model_from_s3_checkpoint
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class BaseWrapper(ABC):
     optimizer_lr: float
@@ -254,7 +253,7 @@ class GoogLeNetTangWrapper(BaseWrapper):
         
         self.model_name = model_name
         self.model = GoogLeNetCustom(num_classes=num_classes)
-        self.optimizer = optim.Adam(self.model.parameters(),
+        self.optimizer = optim.SGD(self.model.parameters(),
                                     lr=self.optimizer_lr,
                                     momentum=self.lr_momentum)
         

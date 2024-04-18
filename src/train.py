@@ -15,12 +15,20 @@ def cli():
     pass
 
 @cli.command(name='resnet')
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
 @click.option('--checkpoint-path',
               default=None,
               type=str,
               help='S3 path (no bucket) to model checkpoint')
-def train_resnet(checkpoint_path):
-    wrapper = ResNet18CustomShowkatWrapper()
+def train_resnet(model_name, checkpoint_path):
+    if model_name is not None:
+        wrapper = ResNet18CustomShowkatWrapper(model_name=model_name)
+    else:
+        wrapper = ResNet18CustomShowkatWrapper()
+
     if checkpoint_path is None:
         model, start_epoch = wrapper.wrap()
     else:
@@ -36,12 +44,20 @@ def train_resnet(checkpoint_path):
 
 
 @cli.command(name='googlenet')
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
 @click.option('--checkpoint-path',
               default=None,
               type=str,
               help='S3 path (no bucket) to model checkpoint')
-def train_googlenet(checkpoint_path):
-    wrapper = GoogLeNetTangWrapper()
+def train_googlenet(model_name, checkpoint_path):
+    if model_name is not None:
+        wrapper = GoogLeNetTangWrapper(model_name=model_name)
+    else:
+        wrapper = GoogLeNetTangWrapper()
+
     if checkpoint_path is None:
         model, start_epoch = wrapper.wrap()
     else:

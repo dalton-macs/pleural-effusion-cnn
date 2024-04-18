@@ -42,7 +42,7 @@ class BaseCNNPE:
 
     s3 = boto3.client('s3')
     # device = torch.device("cpu")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def __init__(self,
                  model_name: str,
@@ -58,9 +58,9 @@ class BaseCNNPE:
         
         self.model_name = model_name
 
-        # Take advantage of multiple GPUs
-        if torch.cuda.device_count() > 1:
-            model = nn.DataParallel(model)
+        # # Take advantage of multiple GPUs
+        # if torch.cuda.device_count() > 1:
+        #     model = nn.DataParallel(model)
 
         self.model = model
         self.optimizer = optimizer
