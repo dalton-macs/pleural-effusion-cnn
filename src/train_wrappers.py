@@ -241,7 +241,7 @@ class GoogLeNetTangWrapper(BaseWrapper):
         transforms.CenterCrop((299, 299)),
         transforms.RandomHorizontalFlip(),
     ])
-    early_stopper: EarlyStopping = EarlyStopping
+    early_stopper: EarlyStopping = EarlyStopping()
     lr_scheduler_kwargs: dict = {'mode': 'min', 'factor': 0.1, 'patience': 5}
     batch_size: int = 64
     epochs: int = 50
