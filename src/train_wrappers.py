@@ -67,8 +67,8 @@ class BaseWrapper(ABC):
 
     def _put_model_on_device(self):
         self.model = self.model.to(DEVICE)
-        if torch.cuda.device_count()>1:
-            self.model = nn.DataParallel(self.model)
+        # if torch.cuda.device_count()>1:
+        #     self.model = nn.DataParallel(self.model)
 
     def _compute_start_epoch(self, checkpoint_path: str) -> int:
         """
