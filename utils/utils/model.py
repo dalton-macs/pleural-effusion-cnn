@@ -37,7 +37,7 @@ class EarlyStopping:
         self.early_stop = False
         self.counter = 0
 
-    def __call__(self, val_loss: float, model: torch.nn.Module):
+    def __call__(self, val_loss: float):
         score = -val_loss
 
         if self.best_score is None:
