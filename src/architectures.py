@@ -1,14 +1,12 @@
 """
-Put each architecture code here
+Code for custom model architectures.
 """
+
 from typing import List
 import torch.nn as nn
 import torchvision.models as models
 
-# TODO: maybe consider implementing transfer learning capabilities if the
-# papers mention it
 
-# TODO: Dalton
 class ResNet18Custom(nn.Module):
     """
     A custom ResNet18 implementation following the paper below
@@ -57,12 +55,12 @@ class ResNet18Custom(nn.Module):
         return self.resnet18(x)
 
 
-# TODO: Dalton
 class GoogLeNetCustom(nn.Module):
     """
     A Semi-custom Inception-V3 (GoogLeNet) implementation of this paper:
     https://doi.org/10.1038/s41746-020-0273-z
     """
+    
     def __init__(self,
                  num_classes: int,
                  train_layers: List[str] = [

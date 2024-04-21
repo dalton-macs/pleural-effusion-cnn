@@ -67,6 +67,7 @@ class BaseWrapper(ABC):
 
     def _put_model_on_device(self):
         self.model = self.model.to(DEVICE)
+        # # nn.DataParallel was causing issues/slowing the train time down
         # if torch.cuda.device_count()>1:
         #     self.model = nn.DataParallel(self.model)
 
@@ -192,7 +193,7 @@ class ResNet18CustomShowkatWrapper(BaseWrapper):
 
 class GoogLeNetTangWrapper(BaseWrapper):
     """
-    A wrapper function to return a trainable object based on the architecture
+    A wrapper class to return a trainable object based on the architecture
     and hyperparameters in the paper below
     https://doi.org/10.1038/s41746-020-0273-z
 

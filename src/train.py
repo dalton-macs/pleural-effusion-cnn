@@ -1,14 +1,13 @@
 """
-The main training file
+The main training file with click implementation.
 """
+
 import click
 from train_wrappers import (
     ResNet18CustomShowkatWrapper,
     GoogLeNetTangWrapper,
 )
 
-
-# TODO: Make CLI more customizable while preserving defaults
 
 @click.group()
 def cli():
@@ -74,18 +73,34 @@ def train_googlenet(model_name, checkpoint_path):
 
 # TODO: Jeffrey or Jingni
 @cli.command(name='unet')
-# @click.option('--model-name', default=None, help='model_name')
-def train_unet():
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
+@click.option('--checkpoint-path',
+              default=None,
+              type=str,
+              help='S3 path (no bucket) to model checkpoint')
+def train_unet(model_name, checkpoint_path):
     click.echo(f'Training the Custom UNet Model')
     raise NotImplementedError
 
 
 # TODO: Jeffrey or Jingni
 @cli.command(name='densenet')
-# @click.option('--model-name', default=None, help='model_name')
-def train_densenet():
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
+@click.option('--checkpoint-path',
+              default=None,
+              type=str,
+              help='S3 path (no bucket) to model checkpoint')
+def train_densenet(model_name, checkpoint_path):
     click.echo(f'Training the Custom DenseNet Model')
     raise NotImplementedError
 
+
 if __name__ == '__main__':
     cli()
+    
