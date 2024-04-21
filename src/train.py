@@ -5,6 +5,7 @@ import click
 from train_wrappers import (
     ResNet18CustomShowkatWrapper,
     GoogLeNetTangWrapper,
+    DenseNetWrapper
 )
 
 
@@ -38,12 +39,14 @@ def train_unet():
     raise NotImplementedError
 
 
-# TODO: Jeffrey or Jingni
+# TODO: Jingni
 @cli.command(name='densenet')
 # @click.option('--model-name', default=None, help='model_name')
 def train_densenet():
     click.echo(f'Training the Custom DenseNet Model')
-    raise NotImplementedError
+    model, batch_size, n_epochs = DenseNetWrapper()
+    model.fit(n_epochs=n_epochs, batch_size=batch_size)
+
 
 if __name__ == '__main__':
     cli()

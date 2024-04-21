@@ -269,8 +269,8 @@ class DenseNetCustom(nn.Module):
             if i != len(block_config) - 1:
                 # add transition layer between dense blocks to
                 # down sample
-                trans = _Transition(num_input_features=num_features,
-                                    num_output_features=num_features // 2)
+                trans = _Transition1(num_input_features=num_features,
+                                     num_output_features=num_features // 2)
                 self.features.add_module('transition%d' % (i + 1), trans)
                 num_features = num_features // 2
 
@@ -292,8 +292,8 @@ class DenseNetCustom(nn.Module):
 
     def forward(self, x):
         features = self.features(x)
-        out = F.relu(features, inplace=True)
-        out = F.adaptive_avg_pool2d(out, (1, 1))
+        out = nn.functional.relu(features, inplace=True)
+        out = nn.functional.adaptive_avg_pool2d(out, (1, 1))
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out

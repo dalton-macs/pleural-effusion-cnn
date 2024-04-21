@@ -336,3 +336,12 @@ class GoogLeNetCNNPE(BaseCNNPE):
         self._save_model(data, f"{self.model_name}-fully-trained_metadata.pth")
 
         return model_path
+
+
+class DenseNetCNNPE(GoogLeNetCNNPE):
+    """
+    ToDo:
+        1. See if need to overrride any function
+    """
+
+    pass

@@ -6,7 +6,7 @@ from typing import Tuple
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-from cnn_pe import BaseCNNPE, GoogLeNetCNNPE
+from cnn_pe import BaseCNNPE, GoogLeNetCNNPE, DenseNetCNNPE
 from architectures import (
     ResNet18Custom,
     GoogLeNetCustom,
@@ -143,4 +143,34 @@ def GoogLeNetTangWrapper(model_name: str = 'GoogLeNetTangCustom',
 
     return wrapped_arch, batch_size, epochs
 
+
 # TODO: Implement wrappers for all other architectures
+def DenseNetWrapper(model_name: str = "DenseNetCustom",
+                    num_classes: int = 2,
+                    **kwargs):
+    model_name = model_name
+    model = DenseNetCustom(num_classes=num_classes)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    criterion = nn.BCELoss()
+    transform = transforms.Compose(
+                                    [transforms.Resize((342, 342)),
+                                     transforms.RandomHorizontalFlip(),
+                                     transforms.ToTensor(),
+                                     ]
+    )
+    early_stopper = EarlyStopping
+    lr_scheduler_kwargs = {'mode': 'min', 'factor': 0.1, 'patience': 5}
+    batch_size = 64
+    epochs = 10
+
+    wrapped_arch = DenseNetCNNPE(model_name=model_name,
+                                 model=model,
+                                 optimizer=optimizer,
+                                 criterion=criterion,
+                                 transform=transform,
+                                 early_stopper=early_stopper,
+                                 lr_scheduler_kwargs=lr_scheduler_kwargs,
+                                 **kwargs
+    )
+
+    return wrapped_arch, batch_size, epochs
