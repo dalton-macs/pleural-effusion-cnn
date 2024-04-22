@@ -16,7 +16,7 @@ from architectures import (
     UNetCustom,
     DenseNetCustom,
 )
-from utils import EarlyStopping, load_model_from_s3_checkpoint
+from utils import EarlyStopping, load_model_from_checkpoint
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -167,7 +167,7 @@ class ResNet18CustomShowkatWrapper(BaseWrapper):
                              checkpoint_path: str,
                              **kwargs) -> Tuple[BaseCNNPE, int]:
         
-        checkpoint = load_model_from_s3_checkpoint(checkpoint_path, DEVICE)
+        checkpoint = load_model_from_checkpoint(checkpoint_path, DEVICE)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self._put_model_on_device()
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -280,7 +280,7 @@ class GoogLeNetTangWrapper(BaseWrapper):
                              checkpoint_path: str,
                              **kwargs) -> Tuple[BaseCNNPE, int]:
         
-        checkpoint = load_model_from_s3_checkpoint(checkpoint_path)
+        checkpoint = load_model_from_checkpoint(checkpoint_path)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self._put_model_on_device()
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

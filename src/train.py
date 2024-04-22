@@ -2,11 +2,16 @@
 The main training file with click implementation.
 """
 
+import os
+from dotenv import load_dotenv
 import click
 from train_wrappers import (
     ResNet18CustomShowkatWrapper,
     GoogLeNetTangWrapper,
 )
+
+load_dotenv()
+LOCAL_DATA_PATH = os.getenv('LOCAL_DATA_PATH')
 
 
 @click.group()
@@ -31,8 +36,10 @@ def train_resnet(model_name, checkpoint_path):
     if checkpoint_path is None:
         model, start_epoch = wrapper.wrap()
     else:
-        click.echo(f'Loading model checkpoint from {checkpoint_path}')
-        model, start_epoch = wrapper.wrap_from_checkpoint(checkpoint_path)
+        full_path = os.path.join(LOCAL_DATA_PATH, checkpoint_path)
+        click.echo(f'Loading model checkpoint from {full_path}')
+        model, start_epoch = wrapper.wrap_from_checkpoint(full_path)
+
 
     batch_size = wrapper.batch_size
     n_epochs = wrapper.epochs
@@ -60,8 +67,9 @@ def train_googlenet(model_name, checkpoint_path):
     if checkpoint_path is None:
         model, start_epoch = wrapper.wrap()
     else:
-        click.echo(f'Loading model checkpoint from {checkpoint_path}')
-        model, start_epoch = wrapper.wrap_from_checkpoint(checkpoint_path)
+        full_path = os.path.join(LOCAL_DATA_PATH, checkpoint_path)
+        click.echo(f'Loading model checkpoint from {full_path}')
+        model, start_epoch = wrapper.wrap_from_checkpoint(full_path)
 
     batch_size = wrapper.batch_size
     n_epochs = wrapper.epochs
@@ -103,4 +111,3 @@ def train_densenet(model_name, checkpoint_path):
 
 if __name__ == '__main__':
     cli()
-    

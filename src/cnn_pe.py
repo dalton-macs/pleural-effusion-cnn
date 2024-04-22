@@ -223,10 +223,10 @@ class BaseCNNPE:
     def predict(cls, model: nn.Module, dataset: Dataset, batch_size: int):
         raise NotImplementedError
 
-    def _save_model(self, data, s3_path):
-        logger.info('Putting data in S3')
+    def _save_model(self, data, path):
+        logger.info('Saving model data')
 
-        full_path = f"{MODEL_PREFIX}/{self.model_name}/{s3_path}"
+        full_path = f"{MODEL_PREFIX}/{self.model_name}/{path}"
 
         if USE_AWS:
             with BytesIO() as bytes:
@@ -239,8 +239,11 @@ class BaseCNNPE:
             full_output_path = f"s3://{AWS_BUCKET}/{full_path}"
 
         else:
-            torch.save(data, full_path)
-            full_output_path = full_path
+            full_output_path = os.path.join(LOCAL_DATA_PATH, full_path)
+            dir2save = os.path.split(full_output_path)[0]
+            if not os.path.exists(dir2save):
+                os.makedirs(dir2save)
+            torch.save(data, full_output_path)
 
         logger.info(f'Succesfully put data in {full_output_path}')
             
