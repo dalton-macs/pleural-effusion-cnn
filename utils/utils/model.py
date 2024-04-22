@@ -16,6 +16,8 @@ logger.addHandler(handler)
 
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
+USE_AWS =os.getenv('USE_AWS', 'False').lower() == 'true'
+LOCAL_DATA_PATH = os.getenv('LOCAL_DATA_PATH')
 s3 = boto3.client('s3')
 
 
@@ -55,13 +57,15 @@ class EarlyStopping:
 
 
 
-def load_model_from_s3_checkpoint(key: str, device: torch.device) -> torch.nn.Module:
+def load_model_from_checkpoint(key: str,
+                               device: torch.device) -> torch.nn.Module:
     """
-    Load a PyTorch model from a checkpoint file stored in an Amazon S3 bucket.
+    Load a PyTorch model from a checkpoint file stored locally or 
+    in an Amazon S3 bucket.
 
     PARAMETERS:
     ----------
-        key (str): Key (path) of the checkpoint file in the bucket.
+        key (str): Path of the checkpoint file (exclude bucket if in S3).
 
     RETURNS:
     -------
@@ -69,14 +73,18 @@ def load_model_from_s3_checkpoint(key: str, device: torch.device) -> torch.nn.Mo
         (e.g., model state dict, optimizer state dict).
     """
 
-    response = s3.get_object(Bucket=AWS_BUCKET, Key=key)
-    checkpoint_bytes = response['Body'].read()
+    if USE_AWS:
+        response = s3.get_object(Bucket=AWS_BUCKET, Key=key)
+        checkpoint_bytes = response['Body'].read()
 
-    # Load model from checkpoint bytes using BytesIO
-    checkpoint_buffer = BytesIO(checkpoint_bytes)
+        # Load model from checkpoint bytes using BytesIO
+        checkpoint_buffer = BytesIO(checkpoint_bytes)
 
-    # Load checkpoint from checkpoint buffer
-    checkpoint = torch.load(checkpoint_buffer,
-                            map_location=device)
+        # Load checkpoint from checkpoint buffer
+        checkpoint = torch.load(checkpoint_buffer,
+                                map_location=device)
+        
+    else:
+        checkpoint = torch.load(key, map_location=device)
 
     return checkpoint

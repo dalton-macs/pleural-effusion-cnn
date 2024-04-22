@@ -13,12 +13,12 @@ logger.addHandler(handler)
 
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
-AWS_MODEL_PREFIX = os.getenv('AWS_MODEL_PREFIX')
+MODEL_PREFIX = os.getenv('MODEL_PREFIX')
 
 if __name__ == '__main__':
 
     logger.info(f"AWS Bucket: {AWS_BUCKET}")
-    logger.info(f"AWS Model Prefix: {AWS_MODEL_PREFIX}")
+    logger.info(f"AWS Model Prefix: {MODEL_PREFIX}")
 
     logger.info(f"Is CUDA available: {torch.cuda.is_available()}")
 

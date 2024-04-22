@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
+USE_AWS =os.getenv('USE_AWS', 'False').lower() == 'true'
+LOCAL_DATA_PATH = os.getenv('LOCAL_DATA_PATH')
 s3 = boto3.client('s3')
 
 
@@ -34,11 +36,18 @@ transform = transforms.Compose([
 
 
 def get_image(example):
-    with BytesIO(s3.get_object(Bucket=AWS_BUCKET, Key=example['file_path'])\
-                 ['Body'].read()) as image_data_io:
-        image = Image.open(image_data_io)
-        image = transform(image)
-    return image, example['label'],example['dicom_id']
+    if USE_AWS:
+        with BytesIO(s3.get_object(Bucket=AWS_BUCKET,
+                                        Key=example['file_path'])\
+                    ['Body'].read()) as image_data_io:
+            image = Image.open(image_data_io)
+    else:
+        image = Image.open(os.path.join(LOCAL_DATA_PATH,
+                                        example['file_path']))
+        
+    image = transform(image)
+
+    return image, example['label'], example['dicom_id']
 
 
 def collate_get_image(batch):

@@ -31,7 +31,9 @@ logger.addHandler(handler)
 
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
-AWS_MODEL_PREFIX = os.getenv('AWS_MODEL_PREFIX')
+USE_AWS =os.getenv('USE_AWS', 'False').lower() == 'true'
+LOCAL_DATA_PATH = os.getenv('LOCAL_DATA_PATH')
+MODEL_PREFIX = os.getenv('MODEL_PREFIX')
 HF_DATASET = os.getenv('HF_DATASET')
 HF_DATASET_TRAIN_SIZE = int(os.getenv('HF_DATASET_TRAIN_SIZE'))
 HF_DATASET_VALID_SIZE = int(os.getenv('HF_DATASET_VALID_SIZE'))
@@ -74,11 +76,16 @@ class BaseCNNPE:
 
 
         def get_image(example):
-            with BytesIO(self.s3.get_object(Bucket=AWS_BUCKET,
-                                            Key=example['file_path'])\
-                        ['Body'].read()) as image_data_io:
-                image = Image.open(image_data_io)
-                image = self.transform(image)
+            if USE_AWS:
+                with BytesIO(self.s3.get_object(Bucket=AWS_BUCKET,
+                                                Key=example['file_path'])\
+                            ['Body'].read()) as image_data_io:
+                    image = Image.open(image_data_io)
+            else:
+                image = Image.open(os.path.join(LOCAL_DATA_PATH,
+                                                example['file_path']))
+                
+            image = self.transform(image)
 
             label = label2numeric(example['label'], self.label_map)
 
@@ -219,18 +226,25 @@ class BaseCNNPE:
     def _save_model(self, data, s3_path):
         logger.info('Putting data in S3')
 
-        full_path = f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}"
-        with BytesIO() as bytes:
-            torch.save(data, bytes)
-            bytes.seek(0)
-            self.s3.put_object(Body=bytes,
-                        Bucket=AWS_BUCKET,
-                        Key=full_path)
+        full_path = f"{MODEL_PREFIX}/{self.model_name}/{s3_path}"
+
+        if USE_AWS:
+            with BytesIO() as bytes:
+                torch.save(data, bytes)
+                bytes.seek(0)
+                self.s3.put_object(Body=bytes,
+                            Bucket=AWS_BUCKET,
+                            Key=full_path)
+                
+            full_output_path = f"s3://{AWS_BUCKET}/{full_path}"
+
+        else:
+            torch.save(data, full_path)
+            full_output_path = full_path
+
+        logger.info(f'Succesfully put data in {full_output_path}')
             
-        full_bucket_path = f"s3://{AWS_BUCKET}/{full_path}"
-        logger.info(f'Succesfully put data in {full_bucket_path}')
-            
-        return full_bucket_path
+        return full_output_path
     
 
 class GoogLeNetCNNPE(BaseCNNPE):
