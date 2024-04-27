@@ -69,7 +69,7 @@ def predict(model_name, model_path, output_path = './data/models',
         if not os.path.exists(output_path):
             os.mkdir(output_path)
         df.to_csv(os.path.join(output_path, 
-                               f"{model_name}_{current_time}.csv"))
+                               f"{model_name}_test_predictions_{current_time}.csv"))
         
     return df
 
