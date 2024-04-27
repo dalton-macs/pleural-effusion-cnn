@@ -5,7 +5,7 @@ The main training file with click implementation.
 import os
 from dotenv import load_dotenv
 import click
-from train_wrappers import (
+from src.wrappers import (
     ResNet18CustomShowkatWrapper,
     GoogLeNetTangWrapper,
 )

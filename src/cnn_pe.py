@@ -5,6 +5,7 @@ import boto3
 import math
 import logging
 from tqdm import tqdm
+from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -44,6 +45,11 @@ class BaseCNNPE:
 
     s3 = boto3.client('s3')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    label_map = {
+        'PE and Others': 1,
+        'PE Only': 1,
+        'No Finding': 0
+        }
 
     def __init__(self,
                  model_name: str,
@@ -67,17 +73,20 @@ class BaseCNNPE:
         self.label_map = label_map
         self.num_classes = len(set(self.label_map.values()))
 
-    def prepare_data(self, dataset: Dataset, batch_size: int) -> DataLoader:
+    @classmethod
+    def prepare_data(cls, dataset: Dataset, batch_size: int, 
+                     label_map: dict, num_classes: int, 
+                     transform: transforms.Compose) -> DataLoader:
         logger.info("Preparing the dataset")
 
         def map_labels(example):
-            example['label'] = label2numeric(example['label'], self.label_map)
+            example['label'] = label2numeric(example['label'], label_map)
             return example
 
 
         def get_image(example):
             if USE_AWS:
-                with BytesIO(self.s3.get_object(Bucket=AWS_BUCKET,
+                with BytesIO(cls.s3.get_object(Bucket=AWS_BUCKET,
                                                 Key=example['file_path'])\
                             ['Body'].read()) as image_data_io:
                     image = Image.open(image_data_io)
@@ -85,9 +94,9 @@ class BaseCNNPE:
                 image = Image.open(os.path.join(LOCAL_DATA_PATH,
                                                 example['file_path']))
                 
-            image = self.transform(image)
+            image = transform(image)
 
-            label = label2numeric(example['label'], self.label_map)
+            label = label2numeric(example['label'], label_map)
 
             return image, label, example['dicom_id']
 
@@ -107,7 +116,7 @@ class BaseCNNPE:
             images = torch.stack(images, dim=0)
             # labels = torch.tensor(labels).float()
             labels = nn.functional.one_hot(torch.tensor(labels),
-                                           self.num_classes).float()
+                                           num_classes).float()
             # dicom_ids = torch.tensor(dicom_ids)
             return {
                 'images': images,
@@ -128,14 +137,18 @@ class BaseCNNPE:
         if train_w_valid:
             dataset = self.dataset['train'].concatenate(
                 self.dataset['validation'])
-            train_loader = self.prepare_data(dataset, batch_size)
+            train_loader = self.prepare_data(dataset, batch_size, 
+                                             self.label_map, self.num_classes, 
+                                             self.transform)
             n_batches = math.ceil(
                 (HF_DATASET_TRAIN_SIZE+HF_DATASET_VALID_SIZE)/batch_size)
         else:
             train_loader = self.prepare_data(self.dataset['train'],
-                                             batch_size)
+                                             batch_size, self.label_map, 
+                                             self.num_classes, self.transform)
             valid_loader = self.prepare_data(self.dataset['validation'],
-                                             batch_size)
+                                             batch_size, self.label_map, 
+                                             self.num_classes, self.transform)
             n_batches = math.ceil(HF_DATASET_TRAIN_SIZE/batch_size)
             
         # Training Loop
@@ -220,8 +233,34 @@ class BaseCNNPE:
         return val_loss, val_accuracy
 
     @classmethod
-    def predict(cls, model: nn.Module, dataset: Dataset, batch_size: int):
-        raise NotImplementedError
+    def predict(cls, model: nn.Module, dataset: Dataset, 
+                transform: transforms.Compose, batch_size: int, 
+                label_map: dict = None) -> Tuple[list, list]:
+        
+        if label_map is None:
+            label_map = cls.label_map
+
+        num_classes = len(set(label_map.values()))
+
+        test_loader = cls.prepare_data(dataset, batch_size, label_map, 
+                                       num_classes, transform)
+
+        model.eval()
+        labels_list = []
+        predicted_list = []
+        with torch.no_grad():
+            for i, batch in tqdm(enumerate(test_loader)):
+                images, labels = batch['images'], batch['labels']
+                images, labels = images.to(cls.device),\
+                    labels.to(cls.device)
+                labels_single = torch.argmax(labels, 1)
+                outputs = model(images)
+                predicted = torch.argmax(outputs, 1)
+
+                labels_list += labels_single.tolist()
+                predicted_list += predicted.tolist()
+
+        return labels_list, predicted_list
 
     def _save_model(self, data, path):
         logger.info('Saving model data')

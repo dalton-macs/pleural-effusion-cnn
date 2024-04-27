@@ -166,7 +166,6 @@ class ResNet18CustomShowkatWrapper(BaseWrapper):
     def wrap_from_checkpoint(self,
                              checkpoint_path: str,
                              **kwargs) -> Tuple[BaseCNNPE, int]:
-        
         checkpoint = load_model_from_checkpoint(checkpoint_path, DEVICE)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self._put_model_on_device()
@@ -280,7 +279,7 @@ class GoogLeNetTangWrapper(BaseWrapper):
                              checkpoint_path: str,
                              **kwargs) -> Tuple[BaseCNNPE, int]:
         
-        checkpoint = load_model_from_checkpoint(checkpoint_path)
+        checkpoint = load_model_from_checkpoint(checkpoint_path, DEVICE)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self._put_model_on_device()
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
