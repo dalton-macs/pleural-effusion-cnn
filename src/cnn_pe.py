@@ -31,7 +31,9 @@ logger.addHandler(handler)
 
 load_dotenv()
 AWS_BUCKET = os.getenv('AWS_BUCKET')
-AWS_MODEL_PREFIX = os.getenv('AWS_MODEL_PREFIX')
+USE_AWS =os.getenv('USE_AWS', 'False').lower() == 'true'
+LOCAL_DATA_PATH = os.getenv('LOCAL_DATA_PATH')
+MODEL_PREFIX = os.getenv('MODEL_PREFIX')
 HF_DATASET = os.getenv('HF_DATASET')
 HF_DATASET_TRAIN_SIZE = int(os.getenv('HF_DATASET_TRAIN_SIZE'))
 HF_DATASET_VALID_SIZE = int(os.getenv('HF_DATASET_VALID_SIZE'))
@@ -41,8 +43,7 @@ HF_DATASET_TEST_SIZE = int(os.getenv('HF_DATASET_TEST_SIZE'))
 class BaseCNNPE:
 
     s3 = boto3.client('s3')
-    # device = torch.device("cpu")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def __init__(self,
                  model_name: str,
@@ -58,11 +59,7 @@ class BaseCNNPE:
         
         self.model_name = model_name
 
-        # Take advantage of multiple GPUs
-        if torch.cuda.device_count() > 1:
-            model = nn.DataParallel(model)
-
-        self.model = model.to(self.device)
+        self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
         self.transform = transform
@@ -79,11 +76,16 @@ class BaseCNNPE:
 
 
         def get_image(example):
-            with BytesIO(self.s3.get_object(Bucket=AWS_BUCKET,
-                                            Key=example['file_path'])\
-                        ['Body'].read()) as image_data_io:
-                image = Image.open(image_data_io)
-                image = self.transform(image)
+            if USE_AWS:
+                with BytesIO(self.s3.get_object(Bucket=AWS_BUCKET,
+                                                Key=example['file_path'])\
+                            ['Body'].read()) as image_data_io:
+                    image = Image.open(image_data_io)
+            else:
+                image = Image.open(os.path.join(LOCAL_DATA_PATH,
+                                                example['file_path']))
+                
+            image = self.transform(image)
 
             label = label2numeric(example['label'], self.label_map)
 
@@ -119,7 +121,8 @@ class BaseCNNPE:
         
         return data_loader
     
-    def fit(self, n_epochs: int, batch_size: int, train_w_valid: bool = False):
+    def fit(self, n_epochs: int, start_epoch: int,
+            batch_size: int, train_w_valid: bool = False):
         logger.info("Starting the training process")
 
         if train_w_valid:
@@ -136,7 +139,7 @@ class BaseCNNPE:
             n_batches = math.ceil(HF_DATASET_TRAIN_SIZE/batch_size)
             
         # Training Loop
-        for epoch in range(1, n_epochs+1):
+        for epoch in range(start_epoch, n_epochs+1):
             logger.info(f"EPOCH [{epoch}/{n_epochs}]")
             self.model.train()
             for i, batch in tqdm(enumerate(train_loader, 1)):
@@ -156,7 +159,8 @@ class BaseCNNPE:
                         f'Batch [{i}/{n_batches}], '
                         f'Train Loss: {loss.item():.4f}')
 
-                    path = f"checkpoints/epoch_{epoch}_batch_{i}.pth"
+                    path = f"checkpoints/epoch_{str(epoch).zfill(2)}_batch_"\
+                        f"{str(i).zfill(2)}.pth"
                     data = {
                         'epoch': epoch,
                         'model_state_dict': self.model.state_dict(),
@@ -219,21 +223,31 @@ class BaseCNNPE:
     def predict(cls, model: nn.Module, dataset: Dataset, batch_size: int):
         raise NotImplementedError
 
-    def _save_model(self, data, s3_path):
-        logger.info('Putting data in S3')
+    def _save_model(self, data, path):
+        logger.info('Saving model data')
 
-        full_path = f"{AWS_MODEL_PREFIX}/{self.model_name}/{s3_path}"
-        with BytesIO() as bytes:
-            torch.save(data, bytes)
-            bytes.seek(0)
-            self.s3.put_object(Body=bytes,
-                        Bucket=AWS_BUCKET,
-                        Key=full_path)
+        full_path = f"{MODEL_PREFIX}/{self.model_name}/{path}"
+
+        if USE_AWS:
+            with BytesIO() as bytes:
+                torch.save(data, bytes)
+                bytes.seek(0)
+                self.s3.put_object(Body=bytes,
+                            Bucket=AWS_BUCKET,
+                            Key=full_path)
+                
+            full_output_path = f"s3://{AWS_BUCKET}/{full_path}"
+
+        else:
+            full_output_path = os.path.join(LOCAL_DATA_PATH, full_path)
+            dir2save = os.path.split(full_output_path)[0]
+            if not os.path.exists(dir2save):
+                os.makedirs(dir2save)
+            torch.save(data, full_output_path)
+
+        logger.info(f'Succesfully put data in {full_output_path}')
             
-        full_bucket_path = f"s3://{AWS_BUCKET}/{full_path}"
-        logger.info(f'Succesfully put data in {full_bucket_path}')
-            
-        return full_bucket_path
+        return full_output_path
     
 
 class GoogLeNetCNNPE(BaseCNNPE):
@@ -258,7 +272,8 @@ class GoogLeNetCNNPE(BaseCNNPE):
             self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
                                                   **lr_scheduler_kwargs)
 
-    def fit(self, n_epochs: int, batch_size: int, train_w_valid: bool = False):
+    def fit(self, n_epochs: int, start_epoch: int,
+            batch_size: int, train_w_valid: bool = False):
         logger.info("Starting the training process")
 
         if train_w_valid:
@@ -275,7 +290,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
             n_batches = math.ceil(HF_DATASET_TRAIN_SIZE/batch_size)
             
         # Training Loop
-        for epoch in range(1, n_epochs+1):
+        for epoch in range(start_epoch, n_epochs+1):
             logger.info(f"EPOCH [{epoch}/{n_epochs}]")
             self.model.train()
             for i, batch in tqdm(enumerate(train_loader, 1)):
@@ -283,7 +298,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
                 images, labels = images.to(self.device),\
                     labels.to(self.device)
                 self.optimizer.zero_grad()
-                outputs = self.model(images)
+                outputs = self.model(images).logits
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
@@ -306,7 +321,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
                     _ = self._save_model(data, path)
 
 
-            self.lr_scheduler.step()
+            self.lr_scheduler.step(loss)
 
             if not train_w_valid:
 
@@ -338,7 +353,7 @@ class GoogLeNetCNNPE(BaseCNNPE):
         return model_path
 
 
-class DenseNetCNNPE(GoogLeNetCNNPE):
+class DenseNetCNNPE(BaseCNNPE):
     """
     ToDo:
         1. See if need to overrride any function
