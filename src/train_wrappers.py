@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-from cnn_pe import BaseCNNPE, GoogLeNetCNNPE, DenseNetCNNPE
+from cnn_pe import BaseCNNPE, GoogLeNetCNNPE, DenseNetCNNPE, UNetCNNPE
 from architectures import (
     ResNet18Custom,
     GoogLeNetCustom,
@@ -315,7 +315,7 @@ def DenseNetWrapper(model_name: str = "DenseNetCustom",
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     criterion = nn.BCELoss()
     transform = transforms.Compose(
-                                    [transforms.Resize((342, 342)),
+                                    [transforms.Resize((224, 224)),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
                                      ]
@@ -323,7 +323,7 @@ def DenseNetWrapper(model_name: str = "DenseNetCustom",
     early_stopper = EarlyStopping
     lr_scheduler_kwargs = {'mode': 'min', 'factor': 0.1, 'patience': 5}
     batch_size = 64
-    epochs = 5
+    epochs = 20
 
     wrapped_arch = DenseNetCNNPE(model_name=model_name,
                                  model=model,
@@ -336,4 +336,32 @@ def DenseNetWrapper(model_name: str = "DenseNetCustom",
     # lr_scheduler_kwargs = lr_scheduler_kwargs,
 
     return wrapped_arch, batch_size, epochs
+
+
+def UNetWrapper(model_name: str = 'UNetCustom-Attention',
+                num_classes: int = 2,
+                **kwargs):
+    model_name = model_name
+    # model = UNetCustom(in_channels=1, out_channels=2)
+    model = UNetCustom(in_channels=1, out_channels=2)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    criterion = nn.BCELoss()
+    transform = transforms.Compose(
+                                    [transforms.Resize((128, 128)),
+                                     transforms.ToTensor(),
+                                     ]
+    )
+    batch_size = 64
+    epochs = 20
+
+    wrapped_arch = UNetCNNPE(model_name=model_name,
+                             model=model,
+                             optimizer=optimizer,
+                             criterion=criterion,
+                             transform=transform,
+                             **kwargs
+                            )
+
+    return wrapped_arch, batch_size, epochs
+
 

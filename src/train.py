@@ -8,7 +8,8 @@ import click
 from train_wrappers import (
     ResNet18CustomShowkatWrapper,
     GoogLeNetTangWrapper,
-    DenseNetWrapper
+    DenseNetWrapper,
+    UNetWrapper
 )
 
 load_dotenv()
@@ -79,23 +80,22 @@ def train_googlenet(model_name, checkpoint_path):
     model.fit(n_epochs=n_epochs, start_epoch=start_epoch,
               batch_size=batch_size)
 
+# @cli.command(name='unet')
+# @click.option('--model-name',
+#               default=None,
+#               type=str,
+#               help='name of model')
+# @click.option('--checkpoint-path',
+#               default=None,
+#               type=str,
+#               help='S3 path (no bucket) to model checkpoint')
+def train_unet():
+    # click.echo(f'Training the Custom UNet Model')
+    model, batch_size, n_epochs = UNetWrapper()
+    model.fit(n_epochs=n_epochs, batch_size=64, start_epoch=1)
 
-# TODO: Jeffrey or Jingni
-@cli.command(name='unet')
-@click.option('--model-name',
-              default=None,
-              type=str,
-              help='name of model')
-@click.option('--checkpoint-path',
-              default=None,
-              type=str,
-              help='S3 path (no bucket) to model checkpoint')
-def train_unet(model_name, checkpoint_path):
-    click.echo(f'Training the Custom UNet Model')
-    raise NotImplementedError
 
 
-# TODO: Jingni
 # @cli.command(name='densenet')
 # @click.option('--model-name',
 #               default=None,
@@ -114,4 +114,4 @@ def train_densenet():
 
 if __name__ == '__main__':
     # cli()
-    train_densenet()
+    train_unet()

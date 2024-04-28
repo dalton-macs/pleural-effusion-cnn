@@ -360,3 +360,12 @@ class DenseNetCNNPE(BaseCNNPE):
     """
 
     pass
+
+
+class UNetCNNPE(BaseCNNPE):
+    """
+    ToDo:
+        1. See if need to overrride any function
+    """
+
+    pass

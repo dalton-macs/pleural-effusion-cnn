@@ -93,12 +93,65 @@ class GoogLeNetCustom(nn.Module):
         return self.inception_v3(x)
 
 
-# TODO: Jeffrey or Jingni
+class UNetAttention(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(UNetAttention, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, 1, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        a = self.conv1(x)
+        x = torch.nn.functional.relu(a)
+        b = self.conv2(x)
+        attention_weights = torch.sigmoid(b)
+        return attention_weights
+
 class UNetCustom(nn.Module):
-    pass
+    def __init__(self, in_channels, out_channels):
+        super(UNetCustom, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        self.decoder = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1))
+            # nn.ConvTranspose2d(64, out_channels, kernel_size=2, stride=2)
+        )
+        self.attention = UNetAttention(64, 1)
+        self.fc = nn.Linear(64, 2)
+        # self.fc = nn.Linear(2*128*128, 2)
+
+    def forward(self, x):
+        x1 = self.encoder(x)
+        x2 = self.decoder(x1)
+        attention_weights = self.attention(x2)
+        x2_att = x2 * attention_weights
+        x3 = torch.nn.functional.adaptive_avg_pool2d(x2_att, (1, 1)).view(x2_att.size(0), -1)
+        # x3 = x2.view(x2.size(0), -1)  # Flatten the output for the fully connected layer
+        x4 = self.fc(x3)
+        return torch.softmax(x4, dim=1)
 
 
-# TODO: Jingni
 # define Dense Layer
 class _DenseLayer(nn.Module):
     def __init__(
