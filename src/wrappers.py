@@ -304,3 +304,128 @@ class GoogLeNetTangWrapper(BaseWrapper):
 
         return wrapped_arch, start_epoch
     
+class DenseNetWrapper(BaseWrapper):
+
+    optimizer_lr: float = 0.0001
+    criterion = nn.BCELoss()
+    transform = transforms.Compose(
+                                    [transforms.Resize((224, 224)),
+                                     transforms.RandomHorizontalFlip(),
+                                     transforms.ToTensor(),
+                                     ]
+    )
+    early_stopper: EarlyStopping = EarlyStopping()
+    lr_scheduler_kwargs: dict = {'mode': 'min', 'factor': 0.1, 'patience': 5}
+    batch_size: int = 64
+    epochs: int = 20
+
+    # def __init__(self,
+    #              model_name: str = 'DenseNetCustom',
+    #              num_classes: int = 2,
+    #              ) -> None:
+        
+    #     self.model_name = model_name
+    #     self.model = DenseNetCustom(num_classes=num_classes)
+    #     self.optimizer = optim.Adam(self.model.parameters(),
+    #                                 lr=self.optimizer_lr)
+        
+    def wrap(self, **kwargs) -> Tuple[BaseCNNPE, int]:
+        # self._put_model_on_device()
+
+        # wrapped_arch = GoogLeNetCNNPE(
+        #     model_name=self.model_name,
+        #     model=self.model,
+        #     optimizer=self.optimizer,
+        #     criterion=self.criterion,
+        #     transform=self.transform,
+        #     early_stopper=self.early_stopper,
+        #     lr_scheduler_kwargs=self.lr_scheduler_kwargs,
+        #     **kwargs
+        # )
+        # wrapped_arch = DenseNetCNNPE(model_name=model_name,
+        #                         model=model,
+        #                         optimizer=optimizer,
+        #                         criterion=criterion,
+        #                         transform=transform,
+        #                         **kwargs
+        # )
+    
+        # start_epoch = 1
+
+        # return wrapped_arch, start_epoch
+
+        pass
+    
+    def wrap_from_checkpoint(self,
+                             checkpoint_path: str,
+                             **kwargs) -> Tuple[BaseCNNPE, int]:
+        
+        pass
+
+
+class UNetWrapper(BaseWrapper):
+    optimizer_lr: float = 0.0001
+    criterion = nn.BCELoss()
+    transform = transforms.Compose(
+                                    [transforms.Resize((128, 128)),
+                                     transforms.ToTensor(),
+                                     ]
+    )
+    early_stopper: EarlyStopping = EarlyStopping()
+    lr_scheduler_kwargs: dict = {'mode': 'min', 'factor': 0.1, 'patience': 5}
+    batch_size: int = 64
+    epochs: int = 20
+
+    # def __init__(self,
+    #              model_name: str = 'UNetCustom-Attention',
+    #              num_classes: int = 2,
+    #              ) -> None:
+        
+    #     self.model_name = model_name
+    #     self.model = DenseNetCustom(num_classes=num_classes)
+    #     self.optimizer = optim.Adam(self.model.parameters(),
+    #                                 lr=self.optimizer_lr)
+
+    def wrap(self, **kwargs) -> Tuple[BaseCNNPE, int]:
+        # self._put_model_on_device()
+
+        # wrapped_arch = GoogLeNetCNNPE(
+        #     model_name=self.model_name,
+        #     model=self.model,
+        #     optimizer=self.optimizer,
+        #     criterion=self.criterion,
+        #     transform=self.transform,
+        #     early_stopper=self.early_stopper,
+        #     lr_scheduler_kwargs=self.lr_scheduler_kwargs,
+        #     **kwargs
+        # )
+    # wrapped_arch = UNetCNNPE(model_name=model_name,
+    #                          model=model,
+    #                          optimizer=optimizer,
+    #                          criterion=criterion,
+    #                          transform=transform,
+    #                          **kwargs
+    #                         )
+    
+        # start_epoch = 1
+
+        # return wrapped_arch, start_epoch
+
+        pass
+    
+    def wrap_from_checkpoint(self,
+                             checkpoint_path: str,
+                             **kwargs) -> Tuple[BaseCNNPE, int]:
+        
+        pass
+
+
+class BaselineWrapper:
+    batch_size: int = 64
+    epochs: int = 2
+    transform = transforms.Compose([
+    # transforms.Resize((224, 224)),  # Resize images to a fixed size
+    transforms.Resize((224, 224)),  # Resize images to a fixed size
+    transforms.ToTensor(),           # Convert images to PyTorch tensors
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize images
+    ])
