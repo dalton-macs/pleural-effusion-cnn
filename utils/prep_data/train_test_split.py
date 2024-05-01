@@ -33,6 +33,37 @@ def make_paths_df(path, download=False):
     return df
 
 
+def fix_labels(df):
+
+    def label_data(row):
+        """
+        Nested function to label PE and No Findings
+        """
+
+        if row['Pleural Effusion'] == 1:
+            if row['N_Findings'] == 1:
+                return 'PE Only'
+            elif row['N_Findings'] > 1:
+                return 'PE and Others'
+        elif row['No Finding'] == 1:
+            return 'No Finding'
+        
+        return None
+    
+    cols2use = ['Atelectasis', 'Cardiomegaly',
+       'Consolidation', 'Edema', 'Enlarged Cardiomediastinum', 'Fracture',
+       'Lung Lesion', 'Lung Opacity', 'No Finding', 'Pleural Effusion',
+       'Pleural Other', 'Pneumonia', 'Pneumothorax', 'Support Devices']
+    
+    df[cols2use] = df[cols2use].replace(-1, 0)
+    
+    df['N_Findings'] = df[cols2use].sum(axis=1)
+
+    df['label'] = df.apply(label_data, axis=1)
+
+    df.to_csv('./data/modified-dataset.csv')
+
+
 def prep_data(df):
     """
     Preps data for huggingface dataset. Keeps only a subset of key features and
@@ -54,6 +85,7 @@ def main():
 
     df = pd.merge(sub, paths, how = 'inner', on = 'dicom_id')
 
+    fix_labels(df)
     prep_data(df)
 
     train_valid_df, test_df = train_test_split(df, test_size=0.2, random_state=123)

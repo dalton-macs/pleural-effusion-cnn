@@ -1,3 +1,6 @@
+
+# import click
+# from src.predict_core import predict_core, predict_baseline_core
 import os
 import click
 from datetime import datetime
@@ -29,24 +32,7 @@ DATASET = load_dataset(os.getenv('HF_DATASET'), streaming=True)
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-@click.group()
-def cli():
-    pass
-
-@cli.command(name='predict')
-@click.option('--model-name',
-              default=None,
-              type=str,
-              help='name of model')
-@click.option('--model-path',
-              default=None,
-              type=str,
-              help='Path to model checkpoint')
-@click.option('--output-path',
-              default='./data/models',
-              type=str,
-              help='Path to save predictions')
-def predict(model_name, model_path, output_path = './data/models',
+def predict_core(model_name, model_path, output_path = None,
             save_output = True, dataset = None):
     match model_name.lower():
         case 'resnet':
@@ -79,20 +65,8 @@ def predict(model_name, model_path, output_path = './data/models',
         
     return df
 
-@cli.command(name='predict-baseline')
-@click.option('--model-name',
-              default=None,
-              type=str,
-              help='name of model')
-@click.option('--model-path',
-              default=None,
-              type=str,
-              help='Path to model checkpoint')
-@click.option('--output-path',
-              default='./data/models',
-              type=str,
-              help='Path to save predictions')
-def predict_baseline(model_name, model_path, output_path = './data/models',
+
+def predict_baseline_core(model_name, model_path, output_path = None,
             save_output = True, dataset = None):
 
     from src.architectures import SimpleCNN
@@ -118,6 +92,49 @@ def predict_baseline(model_name, model_path, output_path = './data/models',
                                f"{model_name}_test_predictions_{current_time}.csv"))
         
     return df
+
+
+@click.group()
+def cli():
+    pass
+
+@cli.command(name='predict')
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
+@click.option('--model-path',
+              default=None,
+              type=str,
+              help='Path to model checkpoint')
+@click.option('--output-path',
+              default='./data/models',
+              type=str,
+              help='Path to save predictions')
+def predict(model_name, model_path, output_path):
+    predict_core(model_name=model_name,
+                 model_path=model_path,
+                 output_path=output_path)
+    
+
+@cli.command(name='predict-baseline')
+@click.option('--model-name',
+              default=None,
+              type=str,
+              help='name of model')
+@click.option('--model-path',
+              default=None,
+              type=str,
+              help='Path to model checkpoint')
+@click.option('--output-path',
+              default='./data/models',
+              type=str,
+              help='Path to save predictions')
+def predict_baseline(model_name, model_path, output_path):
+    predict_baseline_core(model_name=model_name,
+                 model_path=model_path,
+                 output_path=output_path)
+
 
 if __name__ == '__main__':
     cli()

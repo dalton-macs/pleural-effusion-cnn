@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-from cnn_pe import BaseCNNPE, GoogLeNetCNNPE
-from architectures import (
+from src.cnn_pe import BaseCNNPE, GoogLeNetCNNPE
+from src.architectures import (
     ResNet18Custom,
     GoogLeNetCustom,
     UNetCustom,

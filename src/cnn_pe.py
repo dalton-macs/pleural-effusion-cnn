@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from utils import label2numeric, EarlyStopping
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
@@ -237,6 +237,8 @@ class BaseCNNPE:
                 transform: transforms.Compose, batch_size: int, 
                 label_map: dict = None) -> Tuple[list, list]:
         
+        logger.info('Predicting')
+        
         if label_map is None:
             label_map = cls.label_map
 
@@ -249,7 +251,7 @@ class BaseCNNPE:
         labels_list = []
         predicted_list = []
         with torch.no_grad():
-            for i, batch in tqdm(enumerate(test_loader)):
+            for i, batch in enumerate(test_loader):
                 images, labels = batch['images'], batch['labels']
                 images, labels = images.to(cls.device),\
                     labels.to(cls.device)
